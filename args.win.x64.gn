@@ -1,4 +1,5 @@
 clang_use_chrome_plugins=false
+chrome_pgo_phase=false
 dcheck_always_on=false
 enable_rust=false
 is_clang=true
