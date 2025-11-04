@@ -90,7 +90,6 @@ jobs:
 
   build-mac:
     name: mac
-    if: false
     env:
       JOB_NAME: mac
     needs: create-release
