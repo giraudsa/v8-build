@@ -51,7 +51,7 @@ jobs:
           fetch v8
           echo "target_os = ['android']" >> ${{ github.workspace }}/.gclient
           cd ${{ github.workspace }}/v8
-          git checkout branch-heads/$V8_VERSION
+          git checkout $V8_VERSION
           gclient sync
           ./build/install-build-deps.sh
           echo "::endgroup::"
@@ -109,7 +109,7 @@ jobs:
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
-          git checkout branch-heads/$V8_VERSION
+          git checkout $V8_VERSION
           gclient sync
           echo "::endgroup::"
           echo "::group::Compile v8 static library"
@@ -169,7 +169,7 @@ jobs:
           gclient
           fetch v8
           cd v8
-          git checkout branch-heads/$V8_VERSION
+          git checkout $V8_VERSION
           gclient sync
           echo "::endgroup::"
       - name: compile v8 static library
