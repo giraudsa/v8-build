@@ -67,6 +67,7 @@ jobs:
           if [ "${{ matrix.platform }}" = "arm64" ]; then
             zip -r ../include-${{ env.JOB_NAME }}.zip include
           fi
+          ls -a
           echo "::endgroup::"
       - name: Upload static library
         uses: actions/upload-release-asset@v1
@@ -124,6 +125,7 @@ jobs:
           if [ "${{ matrix.platform }}" = "arm64" ]; then
             zip -r ../include-${{ env.JOB_NAME }}.zip include
           fi
+          ls -a
           echo "::endgroup::"
       - name: Upload static library
         uses: actions/upload-release-asset@v1
@@ -135,18 +137,21 @@ jobs:
           asset_name: libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip
           asset_content_type: application/zip
       - name: Upload include
+        if: matrix.platform == 'arm64'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/v8/include-${{ env.JOB_NAME }}.zip
+          asset_path: ${{ github.workspace }}/include-${{ env.JOB_NAME }}.zip
           asset_name: include-${{ env.JOB_NAME }}.zip
           asset_content_type: application/zip
 
   build-win:
     name: windows
     if: false
+    env:
+      JOB_NAME: win
     needs: create-release
     runs-on: windows-latest
     strategy:
@@ -187,8 +192,10 @@ jobs:
         shell: pwsh
         run: |
           echo "::group::Compress artifacts"
-          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
-          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen -Destination ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip
+          if ("${{ matrix.platform }}" -eq "x64") {
+            Compress-Archive -Path ${{ github.workspace }}/v8/include -Destination ${{ github.workspace }}/include-${{ env.JOB_NAME }}.zip
+          }
           echo "::endgroup::"
       - name: Upload static library
         uses: actions/upload-release-asset@v1
@@ -196,17 +203,18 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
-          asset_name: libv8_monolith-win-${{ matrix.platform }}.zip
+          asset_path: ${{ github.workspace }}/libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip
+          asset_name: libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip
           asset_content_type: application/zip
-      - name: Upload generated source
+      - name: Upload include
+        if: matrix.platform == 'x64'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
-          asset_name: gen-win-${{ matrix.platform }}.zip
+          asset_path: ${{ github.workspace }}/include-${{ env.JOB_NAME }}.zip
+          asset_name: include-${{ env.JOB_NAME }}.zip
           asset_content_type: application/zip
 
   publish-release:
