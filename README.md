@@ -1,89 +1,100 @@
-# v8 monolithic library builds
+# V8 Monolithic Library Builds
 
-this repo containes up-to-date builds of the google v8 static libraries for the following platforms
+This repository contains automated builds of Google V8 static libraries for multiple platforms using GitHub Actions.
 
-- linux (x64) - tested on ubunutu 22.04
-- linux (arm64) - tested on raspberry pi 3b+ raspbian(debian 12/bookworm)
-- macos (x64)
-- macos (arm64)
-- windows (x64)
+English | [简体中文](README.ZH.md)
 
-# current release
+## Current V8 Version
 
-https://github.com/just-js/v8/releases/tag/14.1
+**14.3.92**
 
-- [v8 headers](https://github.com/just-js/v8/releases/download/14.1/include.tar.gz)
-- [v8 source](https://github.com/just-js/v8/releases/download/14.1/src.tar.gz)
+## Supported Platforms
 
-## linux x64
+- **Android** (arm64, arm)
+- **iOS** (arm64, arm64.simulator)
+- **macOS** (arm64)
+- **Windows** (x64)
 
-A build of the v8 monolithic library
+## Latest Release
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.1/libv8_monolith-linux-x64.a.gz)
-- [build args](args.linux.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.1/gen-linux-x64.tar.gz)
+Check the [Releases](../../releases) page for the latest precompiled binaries.
 
-## linux arm64
+## Package Contents
 
-A build of the v8 monolithic library
+Each release includes zip packages with:
+- **Static library file** (libv8_monolith.a / v8_monolith.lib)
+- **args.gn** - Build configuration used for compilation
+- **args.full.txt** - Complete GN arguments list with all default values and descriptions
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.1/libv8_monolith-linux-arm64.a.gz)
-- [build args](args.linux.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.1/gen-linux-arm64.tar.gz)
+## Build Configuration Files
 
-## macos x64
+The repository contains GN build configuration files for each platform:
 
-A build of the v8 monolithic library
+### Android
+- [args.android.arm64.gn](args.android.arm64.gn)
+- [args.android.arm.gn](args.android.arm.gn)
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.1/libv8_monolith-mac-x64.a.gz)
-- [build args](args.mac.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.1/gen-mac-x64.tar.gz)
+### iOS
+- [args.ios.arm64.gn](args.ios.arm64.gn) - iOS device
+- [args.ios.arm64.simulator.gn](args.ios.arm64.simulator.gn) - iOS simulator
 
-## macos arm64
+### macOS
+- [args.mac.arm64.gn](args.mac.arm64.gn)
 
-A build of the v8 monolithic library
+### Windows
+- [args.win.x64.gn](args.win.x64.gn)
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.1/libv8_monolith-mac-arm64.a.gz)
-- [build args](args.mac.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.1/gen-mac-arm64.tar.gz)
+## Features
 
-## windows x64
+- ✅ Automated builds via GitHub Actions
+- ✅ Consistent configuration across platforms
+- ✅ Pre-build scripts for platform-specific optimizations ([builder.js](builder.js))
+- ✅ Full build argument traceability
+- ✅ iOS WebAssembly support enabled
 
-A build of the v8 monolithic library
+## Usage
 
-- [static library](https://github.com/just-js/v8/releases/download/14.1/libv8_monolith-win-x64.zip)
-- [build args](args.win.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.1/gen-win-x64.zip)
+1. Download the appropriate zip file for your platform from the [Releases](../../releases) page
+2. Extract the static library file
+3. Link against the library in your project
+4. Include the V8 headers (included in the release)
+5. Refer to `args.gn` and `args.full.txt` to understand the build configuration
 
-## docs
+## Build System
 
-- https://v8.dev/docs/compile-arm64
-- https://v8.dev/docs/build
-- https://v8.dev/docs/build-gn
+All builds are automated using [GitHub Actions](.github/workflows/main.yml):
+- Clean build environment for each platform
+- Consistent depot_tools version
+- Reproducible builds
+- Automated release creation
 
-## release schedule
+## V8 Documentation
 
-- https://chromiumdash.appspot.com/schedule
+### Official V8 Resources
+- [V8 Build Instructions](https://v8.dev/docs/build)
+- [V8 Build with GN](https://v8.dev/docs/build-gn)
+- [V8 ARM64 Build](https://v8.dev/docs/compile-arm64)
 
-## github actions images
+### Chromium Build Instructions
+- [Windows Build Instructions](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md)
+- [Android Build Instructions](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/android_build_instructions.md)
+- [iOS Build Instructions](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/ios/build_instructions.md)
+- [macOS Build Instructions](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/mac_build_instructions.md)
+- [macOS ARM64 Build](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/mac_arm64.md)
 
-- https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/windows/Windows2019-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md
-- https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md
+### Additional Resources
+- [V8 Release Schedule](https://chromiumdash.appspot.com/schedule)
+- [GitHub Actions Runner Images](https://github.com/actions/runner-images)
 
-## build instructions
+## Contributing
 
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/android_build_instructions.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/ios/build_instructions.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/linux/build_instructions.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/linux/chromium_arm.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/linux/sysroot.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/mac_build_instructions.md
-- https://chromium.googlesource.com/chromium/src/+/HEAD/docs/mac_arm64.md
+To update the V8 version or modify build configurations:
+
+1. Update `V8_VERSION` in [.github/workflows/main.yml](.github/workflows/main.yml)
+2. Modify platform-specific `args.*.gn` files as needed
+3. Update [builder.js](builder.js) for platform-specific build logic
+4. Create a new git tag to trigger the build workflow
+
+## License
+
+This repository contains build configurations and automation scripts. V8 itself is licensed under the BSD license. See the [V8 repository](https://github.com/v8/v8) for details.

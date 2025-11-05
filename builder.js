@@ -44,16 +44,20 @@ trace("workspace=" + workspace);
 
 const v8SourcePath = path.join(workspace, "v8");
 
+/**
+ * 在ninja构建前执行，修改v8源码
+ */
 let onBeforeBuild = function () {
     switch (jobName) {
-        case "android":
-
+        case "android": {
+            // DO NOTHING
             break;
+        }
         case "ios": {
             // parse args.ios.${{ matrix.platform }}.gn
             const argsPath = path.join(workspace, `args.ios.${platform}.gn`);
             const args = parseGNArgs(argsPath);
-            trace("v8_enable_webassembly=" + args["v8_enable_webassembly"]);
+            trace(JSON.stringify(args, null, 2));
             if (args["v8_enable_webassembly"] === "true") {
                 {
                     //  BUILD.gn
@@ -103,8 +107,15 @@ let onBeforeBuild = function () {
         }
 
         case "mac":
-
-            break;
+            {
+                // DO NOTHING
+                break;
+            }
+        case "win":
+            {
+                // DO NOTHING
+                break;
+            }
     }
 };
 onBeforeBuild();
