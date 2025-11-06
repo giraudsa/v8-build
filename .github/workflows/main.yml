@@ -32,17 +32,26 @@ jobs:
               '**Note: Please download the build artifacts below, DO NOT use Source code**',
               '',
               '## Supported Platforms',
-              '- Android (arm64, arm, x64)',
-              '  - Each platform: static library + args.gn + args.full.txt',
-              '  - Separate header files: include-android.zip',
-              '- Apple (XCFramework for iOS + macOS)',
-              '  - iOS: arm64 device + arm64 simulator',
-              '  - macOS: arm64 (Apple Silicon)',
-              '  - Includes all V8 header files within the XCFramework',
-              '  - Package includes args.gn and args.full.txt for all three variants',
-              '- Windows (x64)',
-              '  - Static library + args.gn + args.full.txt',
-              '  - Separate header files: include-win.zip'
+              '',
+              '### Android (arm64, arm, x64)',
+              '- Static library: `libv8_monolith-android-{arch}.zip`',
+              '- Header files: `include-android.zip`',
+              '- Each package includes: static library + args.gn + args.full.txt',
+              '',
+              '### iOS (XCFramework)',
+              '- Package: `libv8_monolith-ios.zip`',
+              '- Architectures: arm64 device + arm64 simulator',
+              '- Includes: XCFramework with headers + args.gn + args.full.txt for both variants',
+              '',
+              '### macOS (XCFramework)',
+              '- Package: `libv8_monolith-mac.zip`',
+              '- Architecture: arm64 (Apple Silicon)',
+              '- Includes: XCFramework with headers + args.gn + args.full.txt',
+              '',
+              '### Windows (x64)',
+              '- Static library: `libv8_monolith-win-x64.zip`',
+              '- Header files: `include-win.zip`',
+              '- Package includes: static library + args.gn + args.full.txt'
             ].join('\n');
             
             const release = await github.rest.repos.createRelease({
@@ -60,7 +69,6 @@ jobs:
             return release.data;
 
   build-android:
-    if: false # disable
     name: android
     env:
       JOB_NAME: android
@@ -84,10 +92,10 @@ jobs:
           WORKSPACE: ${{ github.workspace }}
         run: |
           echo "::group::Prepare v8 build environment"
-          git clone $DEPOT_TOOLS_REPO
+          git clone $DEPOT_TOOLS_REPO > /dev/null
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
-          fetch v8
+          fetch v8 > /dev/null
           cat > ${{ github.workspace }}/.gclient << 'EOF'
           solutions = [
             {
@@ -149,10 +157,10 @@ jobs:
           asset_name: include-${{ env.JOB_NAME }}.zip
           asset_content_type: application/zip
 
-  build-apple:
-    name: apple (ios + macos)
+  build-ios:
+    name: ios
     env:
-      JOB_NAME: apple
+      JOB_NAME: ios
     needs: create-release
     runs-on: macos-26
     steps:
@@ -165,10 +173,10 @@ jobs:
       - name: Prepare v8 environment
         run: |
           echo "::group::Prepare v8 build environment"
-          git clone $DEPOT_TOOLS_REPO
+          git clone $DEPOT_TOOLS_REPO > /dev/null
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
-          fetch v8
+          fetch v8 > /dev/null
           cat > ${{ github.workspace }}/.gclient << 'EOF'
           solutions = [
             {
@@ -183,7 +191,7 @@ jobs:
               },
             },
           ]
-          target_os = ['ios', 'mac']
+          target_os = ['ios']
           EOF
           cd ${{ github.workspace }}/v8
           git checkout $V8_VERSION
@@ -225,10 +233,101 @@ jobs:
           ninja v8_monolith -C out.gn/ios.arm64.simulator.release/
           gn args --list out.gn/ios.arm64.simulator.release > out.gn/ios.arm64.simulator.release/args.full.txt
           echo "::endgroup::"
+      - name: Create XCFramework
+        run: |
+          cd ${{ github.workspace }}/v8
+          echo "::group::Create XCFramework with headers"
+          
+          # Create framework structure for iOS device
+          mkdir -p frameworks/ios-arm64/libv8_monolith.framework/Headers
+          cp out.gn/ios.arm64.release/obj/libv8_monolith.a frameworks/ios-arm64/libv8_monolith.framework/libv8_monolith
+          cp -R include/* frameworks/ios-arm64/libv8_monolith.framework/Headers/
+          
+          # Create framework structure for iOS simulator
+          mkdir -p frameworks/ios-arm64-simulator/libv8_monolith.framework/Headers
+          cp out.gn/ios.arm64.simulator.release/obj/libv8_monolith.a frameworks/ios-arm64-simulator/libv8_monolith.framework/libv8_monolith
+          cp -R include/* frameworks/ios-arm64-simulator/libv8_monolith.framework/Headers/
+          
+          # Copy and customize Info.plist for each framework
+          sed "s/V8_VERSION_PLACEHOLDER/${{ env.V8_VERSION }}/g" ${{ github.workspace }}/Info.plist.template > frameworks/ios-arm64/libv8_monolith.framework/Info.plist
+          sed "s/V8_VERSION_PLACEHOLDER/${{ env.V8_VERSION }}/g" ${{ github.workspace }}/Info.plist.template > frameworks/ios-arm64-simulator/libv8_monolith.framework/Info.plist
+          
+          # Create XCFramework for iOS (device + simulator)
+          xcodebuild -create-xcframework \
+            -framework frameworks/ios-arm64/libv8_monolith.framework \
+            -framework frameworks/ios-arm64-simulator/libv8_monolith.framework \
+            -output libv8_monolith.xcframework
+          
+          # Verify XCFramework structure
+          echo "iOS XCFramework structure:"
+          ls -R libv8_monolith.xcframework
+          echo ""
+          echo "XCFramework top-level Info.plist (auto-generated by xcodebuild):"
+          cat libv8_monolith.xcframework/Info.plist
+          
+          echo "::endgroup::"
+          echo "::group::Compress artifacts"
+          zip -r ../libv8_monolith-${{ env.JOB_NAME }}.zip \
+            libv8_monolith.xcframework \
+            out.gn/ios.arm64.release/args.gn \
+            out.gn/ios.arm64.release/args.full.txt \
+            out.gn/ios.arm64.simulator.release/args.gn \
+            out.gn/ios.arm64.simulator.release/args.full.txt
+          ls -lh ../libv8_monolith-${{ env.JOB_NAME }}.zip
+          echo "::endgroup::"
+      - name: Upload XCFramework
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/libv8_monolith-${{ env.JOB_NAME }}.zip
+          asset_name: libv8_monolith-${{ env.JOB_NAME }}.zip
+          asset_content_type: application/zip
+
+  build-mac:
+    name: macos
+    env:
+      JOB_NAME: mac
+    needs: create-release
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Prepare v8 environment
+        run: |
+          echo "::group::Prepare v8 build environment"
+          git clone $DEPOT_TOOLS_REPO > /dev/null
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8 > /dev/null
+          cat > ${{ github.workspace }}/.gclient << 'EOF'
+          solutions = [
+            {
+              "name": "v8",
+              "url": "https://chromium.googlesource.com/v8/v8.git",
+              "managed": False,
+              "custom_deps": {
+                "v8/test/benchmarks/data": None,
+                "v8/test/mozilla/data": None,
+                "v8/test/test262/data": None,
+                "v8/test/wasm-js/data": None,
+              },
+            },
+          ]
+          EOF
+          cd ${{ github.workspace }}/v8
+          git checkout $V8_VERSION
+          gclient sync
+          echo "::endgroup::"
       - name: Build macOS arm64
         env:
           PLATFORM: arm64
-          JOB_NAME: mac
+          JOB_NAME: ${{ env.JOB_NAME }}
           WORKSPACE: ${{ github.workspace }}
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -248,35 +347,21 @@ jobs:
           cd ${{ github.workspace }}/v8
           echo "::group::Create XCFramework with headers"
           
-          # Create framework structure for iOS device
-          mkdir -p frameworks/ios-arm64/libv8_monolith.framework/Headers
-          cp out.gn/ios.arm64.release/obj/libv8_monolith.a frameworks/ios-arm64/libv8_monolith.framework/libv8_monolith
-          cp -R include/* frameworks/ios-arm64/libv8_monolith.framework/Headers/
-          
-          # Create framework structure for iOS simulator
-          mkdir -p frameworks/ios-arm64-simulator/libv8_monolith.framework/Headers
-          cp out.gn/ios.arm64.simulator.release/obj/libv8_monolith.a frameworks/ios-arm64-simulator/libv8_monolith.framework/libv8_monolith
-          cp -R include/* frameworks/ios-arm64-simulator/libv8_monolith.framework/Headers/
-          
           # Create framework structure for macOS
           mkdir -p frameworks/macos-arm64/libv8_monolith.framework/Headers
           cp out.gn/mac.arm64.release/obj/libv8_monolith.a frameworks/macos-arm64/libv8_monolith.framework/libv8_monolith
           cp -R include/* frameworks/macos-arm64/libv8_monolith.framework/Headers/
           
-          # Copy and customize Info.plist for each framework
-          sed "s/V8_VERSION_PLACEHOLDER/${{ env.V8_VERSION }}/g" ${{ github.workspace }}/Info.plist.template > frameworks/ios-arm64/libv8_monolith.framework/Info.plist
-          sed "s/V8_VERSION_PLACEHOLDER/${{ env.V8_VERSION }}/g" ${{ github.workspace }}/Info.plist.template > frameworks/ios-arm64-simulator/libv8_monolith.framework/Info.plist
+          # Copy and customize Info.plist
           sed "s/V8_VERSION_PLACEHOLDER/${{ env.V8_VERSION }}/g" ${{ github.workspace }}/Info.plist.template > frameworks/macos-arm64/libv8_monolith.framework/Info.plist
           
-          # Create XCFramework with iOS + macOS support
+          # Create XCFramework for macOS
           xcodebuild -create-xcframework \
-            -framework frameworks/ios-arm64/libv8_monolith.framework \
-            -framework frameworks/ios-arm64-simulator/libv8_monolith.framework \
             -framework frameworks/macos-arm64/libv8_monolith.framework \
             -output libv8_monolith.xcframework
           
           # Verify XCFramework structure
-          echo "XCFramework structure:"
+          echo "macOS XCFramework structure:"
           ls -R libv8_monolith.xcframework
           echo ""
           echo "XCFramework top-level Info.plist (auto-generated by xcodebuild):"
@@ -286,10 +371,6 @@ jobs:
           echo "::group::Compress artifacts"
           zip -r ../libv8_monolith-${{ env.JOB_NAME }}.zip \
             libv8_monolith.xcframework \
-            out.gn/ios.arm64.release/args.gn \
-            out.gn/ios.arm64.release/args.full.txt \
-            out.gn/ios.arm64.simulator.release/args.gn \
-            out.gn/ios.arm64.simulator.release/args.full.txt \
             out.gn/mac.arm64.release/args.gn \
             out.gn/mac.arm64.release/args.full.txt
           ls -lh ../libv8_monolith-${{ env.JOB_NAME }}.zip
@@ -305,7 +386,6 @@ jobs:
           asset_content_type: application/zip
 
   build-win:
-    if: false # disable
     name: windows
     env:
       JOB_NAME: win
@@ -331,7 +411,7 @@ jobs:
         run: |
           echo "::group::Prepare v8 build environment"
           git config --global depot-tools.allowGlobalGitConfig true
-          git clone $DEPOT_TOOLS_REPO
+          git clone $DEPOT_TOOLS_REPO > NUL
           gclient
           fetch v8
           cat > .gclient << 'EOF'
@@ -408,7 +488,7 @@ jobs:
 
   publish-release:
     name: publish release
-    needs: [build-android, build-apple, build-win]
+    needs: [build-android, build-ios, build-mac, build-win]
     runs-on: ubuntu-latest
     steps:
     - name: Publish Release

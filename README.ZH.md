@@ -11,9 +11,8 @@
 ## 支持平台
 
 - **Android** (arm64, arm, x64)
-- **Apple** (iOS + macOS 统一 XCFramework)
-  - iOS: arm64 真机、arm64 模拟器
-  - macOS: arm64 (Apple Silicon)
+- **iOS** (XCFramework: arm64 真机、arm64 模拟器)
+- **macOS** (XCFramework: arm64 Apple Silicon)
 - **Windows** (x64)
 
 ## 最新版本
@@ -31,12 +30,13 @@
 
 | 平台 | 产物文件 | 架构 | 说明 |
 |------|---------|------|------|
-| Android  | `libv8_monolith-android-arm64.zip` | arm64 | Android arm64 静态库 |
-| Android  | `libv8_monolith-android-arm.zip` | arm | Android arm 静态库 |
-| Android  | `libv8_monolith-android-x64.zip` | x64 | Android x64 静态库（模拟器） |
-| Android  | `include-android.zip` | - | V8 头文件（来自 arm64 构建） |
-| Apple    | `libv8_monolith-apple.zip` | iOS arm64（真机+模拟器）<br>macOS arm64 | 统一 XCFramework（已包含头文件），支持 iOS 和 macOS |
-| Windows  | `libv8_monolith-win-x64.zip` | x64 | Windows x64 静态库 |
+| Android  | `libv8_monolith-android-arm64.zip` | arm64 | 静态库 + args.gn + args.full.txt |
+| Android  | `libv8_monolith-android-arm.zip` | arm | 静态库 + args.gn + args.full.txt |
+| Android  | `libv8_monolith-android-x64.zip` | x64 | 静态库 + args.gn + args.full.txt |
+| Android  | `include-android.zip` | - | V8 头文件 |
+| iOS      | `libv8_monolith-ios.zip` | arm64（真机+模拟器） | XCFramework（含头文件 + args.gn + args.full.txt） |
+| macOS    | `libv8_monolith-mac.zip` | arm64（Apple Silicon） | XCFramework（含头文件 + args.gn + args.full.txt） |
+| Windows  | `libv8_monolith-win-x64.zip` | x64 | 静态库 + args.gn + args.full.txt |
 | Windows  | `include-win.zip` | - | V8 头文件 |
 
 ## 构建配置文件
@@ -48,27 +48,21 @@
 - [args.android.arm.gn](args.android.arm.gn)
 - [args.android.x64.gn](args.android.x64.gn)
 
-### Apple (iOS + macOS)
-- [args.ios.arm64.gn](args.ios.arm64.gn) - iOS 真机设备配置
-- [args.ios.arm64.simulator.gn](args.ios.arm64.simulator.gn) - iOS 模拟器配置
-- [args.mac.arm64.gn](args.mac.arm64.gn) - macOS 配置
+### iOS
+- [args.ios.arm64.gn](args.ios.arm64.gn) - 真机设备配置
+- [args.ios.arm64.simulator.gn](args.ios.arm64.simulator.gn) - 模拟器配置
 
-**注意**：Apple 构建会生成一个统一的 XCFramework，同时支持 iOS（arm64 真机 + arm64 模拟器）和 macOS（arm64 Apple Silicon）。XCFramework 是 Apple 的现代解决方案，用于分发包含多个平台和架构变体的二进制框架，可以在 Xcode 项目中无缝使用。
+**注意**：iOS 构建会生成一个 XCFramework，同时支持 arm64 真机和 arm64 模拟器平台。
 
-**XCFramework 结构**:
+**iOS XCFramework 结构**:
 ```
 libv8_monolith.xcframework/
-├── ios-arm64/                          # iOS 真机
+├── ios-arm64/                          # 真机
 │   └── libv8_monolith.framework/
 │       ├── Headers/                    # V8 头文件
 │       ├── libv8_monolith              # 静态库
 │       └── Info.plist
-├── ios-arm64-simulator/                # iOS 模拟器
-│   └── libv8_monolith.framework/
-│       ├── Headers/                    # V8 头文件
-│       ├── libv8_monolith              # 静态库
-│       └── Info.plist
-└── macos-arm64/                        # macOS Apple Silicon
+└── ios-arm64-simulator/                # 模拟器
     └── libv8_monolith.framework/
         ├── Headers/                    # V8 头文件
         ├── libv8_monolith              # 静态库
@@ -79,7 +73,24 @@ libv8_monolith.xcframework/
 1. 将 `libv8_monolith.xcframework` 拖入 Xcode 项目
 2. 添加到 "Frameworks, Libraries, and Embedded Content"
 3. 导入头文件：`#include <libv8_monolith/v8.h>`
-4. Xcode 会自动选择正确的变体（iOS 真机/模拟器/macOS）
+4. Xcode 会自动选择正确的变体（真机/模拟器）
+
+### macOS
+- [args.mac.arm64.gn](args.mac.arm64.gn)
+
+**注意**：macOS 构建会生成一个 XCFramework，支持 arm64（Apple Silicon）。
+
+**macOS XCFramework 结构**:
+```
+libv8_monolith.xcframework/
+└── macos-arm64/                        # Apple Silicon
+    └── libv8_monolith.framework/
+        ├── Headers/                    # V8 头文件
+        ├── libv8_monolith              # 静态库
+        └── Info.plist
+```
+
+**在 Xcode 中使用**：与 iOS 相同，直接拖拽到项目中即可
 
 ### Windows
 - [args.win.x64.gn](args.win.x64.gn)

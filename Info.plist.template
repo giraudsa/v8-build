@@ -7,7 +7,7 @@
     <key>CFBundleExecutable</key>
     <string>libv8_monolith</string>
     <key>CFBundleIdentifier</key>
-    <string>com.v8.libv8_monolith</string>
+    <string>lib.v8_monolith</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>

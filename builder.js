@@ -67,7 +67,7 @@ let onBeforeBuild = function () {
                     let isModify = false;
                     for (let i = 0; i < lines.length; i++) {
                         if (lines[i].includes("is_drumbrake_supported")) {
-                            trace("Modify BUILD.gn:line-" + (i - 1));
+                            trace("********************************** Modify BUILD.gn:line-" + (i - 1));
                             lines[i - 1] = `# ${lines[i - 1]}`;
                             lines[i] = `# ${lines[i]}`;
                             lines[i + 1] = `# ${lines[i + 1]}`;
@@ -95,7 +95,7 @@ let onBeforeBuild = function () {
                     let isModify = false;
                     for (let i = 0; i < lines.length; i++) {
                         if (lines[i].includes("use_blink")) {
-                            trace("Modify gni/v8.gn:line-" + (i));
+                            trace("********************************** Modify gni/v8.gn:line-" + (i));
                             lines[i] = lines[i] + codes;
                             isModify = true;
                             break;
