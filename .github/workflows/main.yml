@@ -85,12 +85,47 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+      - name: Install NDK r28b
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r28b
+          add-to-path: false
+          local-cache: true
       - name: compile v8
         env:
+          NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-root }}
           PLATFORM: ${{ matrix.platform }}
           JOB_NAME: ${{ env.JOB_NAME }}
           WORKSPACE: ${{ github.workspace }}
         run: |
+          echo "::group::Install sysroot"
+          if [[ -d "/usr/lib/i386-linux-gnu" ]]; then
+            echo "/usr/lib/i386-linux-gnu exists."
+            ls -la /usr/lib/i386-linux-gnu/libatomic.so.1*
+          else
+            echo "/usr/lib/i386-linux-gnu doesn't not exist."
+          fi
+
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y libc6:i386 libstdc++6:i386 libatomic1:i386
+
+          if [[ -d "/usr/lib/i386-linux-gnu" ]]; then
+            echo "/usr/lib/i386-linux-gnu exists."
+            ls -la /usr/lib/i386-linux-gnu/
+            ls -la /usr/lib/i386-linux-gnu/libatomic.so.1*
+          else
+            echo "/usr/lib/i386-linux-gnu doesn't not exist."
+          fi
+
+          if [[ -d "/usr/lib/x86_64-linux-gnu" ]]; then
+            echo "/usr/lib/x86_64-linux-gnu exists."
+            ls -la /usr/lib/x86_64-linux-gnu/libatomic.so.1*
+          else
+            echo "/usr/lib/x86_64-linux-gnu doesn't not exist."
+          fi
+
           echo "::group::Prepare v8 build environment"
           git clone $DEPOT_TOOLS_REPO > /dev/null
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -113,12 +148,24 @@ jobs:
           target_os = ['android']
           EOF
           cd ${{ github.workspace }}/v8
+
+          echo "Install sysroot"
+          if [[ "${{ matrix.platform }}" == "arm64" || "${{ matrix.platform }}" == "x64" ]];then
+            INSTALL_SYSROOT_ARCH="amd64"
+          else
+            INSTALL_SYSROOT_ARCH="i386"
+          fi
+          python3 ./build/linux/sysroot_scripts/install-sysroot.py --arch=${INSTALL_SYSROOT_ARCH}
+          
+          echo "Checkout v8"
           git checkout $V8_VERSION
+
           gclient sync
           ./build/install-build-deps.sh --no-prompt --no-chromeos-fonts || true
           echo "::endgroup::"
           echo "::group::Run pre-build script"
           node ${{ github.workspace }}/builder.js
+          echo "NDK_ROOT=${NDK_ROOT}"
           echo "::endgroup::"
           echo "::group::Compile v8 static library"
           mkdir -p out.gn/android.${{ matrix.platform }}.release/
