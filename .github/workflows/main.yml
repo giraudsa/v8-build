@@ -96,11 +96,24 @@ jobs:
 
       - name: compile v8
         env:
-          NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-root }}
           PLATFORM: ${{ matrix.platform }}
           JOB_NAME: ${{ env.JOB_NAME }}
           WORKSPACE: ${{ github.workspace }}
         run: |
+          # Set NDK_ROOT from the setup-ndk action output
+          export NDK_ROOT="${{ steps.setup-ndk.outputs.ndk-path }}"
+          echo "NDK_ROOT from action: ${NDK_ROOT}"
+          
+          # Verify NDK installation
+          if [ -z "$NDK_ROOT" ] || [ ! -d "$NDK_ROOT" ]; then
+            echo "Error: NDK not found or NDK_ROOT is empty"
+            echo "NDK_ROOT = ${NDK_ROOT}"
+            exit 1
+          fi
+          
+          echo "NDK installed successfully at: ${NDK_ROOT}"
+          ls -la "${NDK_ROOT}"
+          
           echo "::group::Install sysroot"
           if [[ -d "/usr/lib/i386-linux-gnu" ]]; then
             echo "/usr/lib/i386-linux-gnu exists."
