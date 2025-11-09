@@ -15,7 +15,6 @@ symbol_level=0
 treat_warnings_as_errors=false
 use_custom_libcxx=false
 use_rtti=false
-use_sysroot=true
 use_custom_libunwind=false
 use_ml_inliner=false
 v8_deprecation_warnings=false
