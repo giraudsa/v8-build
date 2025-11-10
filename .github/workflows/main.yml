@@ -5,7 +5,7 @@ on:
       - 'v*'
 
 env:
-  V8_VERSION: "14.3.92"
+  V8_VERSION: "14.3.127.5"
   DEPOT_TOOLS_REPO: "https://chromium.googlesource.com/chromium/tools/depot_tools.git"
 
 defaults:

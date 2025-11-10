@@ -56,10 +56,14 @@ let onBeforeBuild = function () {
     const gnContent = fs.readFileSync(argsPath, "utf8");
     switch (jobName) {
         case "android": {
+            /**
+             * android_ndk_root="${NDK_ROOT}"
+clang_base_path="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64"
+             * 
+             */
             let newGnContent = gnContent + 
 `use_glib=false
-use_custom_libcxx=false
-clang_base_path="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64"`;
+`;
             fs.writeFileSync(argsPath, newGnContent);
             trace("argsPath: " + newGnContent);
             break;
