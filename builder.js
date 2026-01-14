@@ -52,10 +52,11 @@ const v8SourcePath = path.join(workspace, "v8");
  * 在ninja构建前执行，修改v8源码
  */
 let onBeforeBuild = function () {
-    const argsPath = path.join(workspace, `args.${jobName}.${platform}.gn`);
-    const gnContent = fs.readFileSync(argsPath, "utf8");
+
     switch (jobName) {
         case "android": {
+            const argsPath = path.join(workspace, `args.${jobName}.${platform}.gn`);
+            const gnContent = fs.readFileSync(argsPath, "utf8");
             /**
              * android_ndk_root="${NDK_ROOT}"
 clang_base_path="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64"
@@ -71,6 +72,8 @@ clang_base_path="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64"
             break;
         }
         case "ios": {
+            const argsPath = path.join(workspace, `args.${jobName}.${platform}.gn`);
+            const gnContent = fs.readFileSync(argsPath, "utf8");
             if (gnContent.indexOf(`v8_enable_drumbrake=true`) >= 0) {
                 {
                     trace("v8_enable_drumbrake = true");
