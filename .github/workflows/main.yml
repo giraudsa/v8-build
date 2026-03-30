@@ -168,9 +168,11 @@ jobs:
           echo "::endgroup::"
           echo "::group::Package chromium libc++ (needed by embedders)"
           # Collect chromium's libc++ and libc++abi .o files into a single archive
+          AR=$(find ${{ github.workspace }}/v8/third_party/llvm-build -name 'llvm-ar' -type f | head -1)
+          echo "Using ar: $AR"
           find ${OUTDIR}/obj/buildtools/third_party/libc++ -name '*.o' > /tmp/libcxx_objs.txt
           find ${OUTDIR}/obj/buildtools/third_party/libc++abi -name '*.o' >> /tmp/libcxx_objs.txt
-          llvm-ar rcs ${OUTDIR}/obj/libc++_chromium.a $(cat /tmp/libcxx_objs.txt)
+          $AR rcs ${OUTDIR}/obj/libc++_chromium.a $(cat /tmp/libcxx_objs.txt)
           echo "Packaged $(wc -l < /tmp/libcxx_objs.txt) objects into libc++_chromium.a"
           echo "::endgroup::"
           echo "::group::Compress artifacts"
