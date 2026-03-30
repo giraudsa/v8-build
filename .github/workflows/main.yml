@@ -70,7 +70,6 @@ jobs:
             return release.data;
 
   build-android:
-    if: false
     name: android
     env:
       JOB_NAME: android
