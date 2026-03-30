@@ -545,7 +545,8 @@ jobs:
 
   publish-release:
     name: publish release
-    needs: [build-android, build-ios, build-mac, build-win]
+    if: always()
+    needs: [build-android, build-win]
     runs-on: ubuntu-latest
     steps:
     - name: Publish Release

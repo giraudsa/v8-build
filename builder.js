@@ -62,8 +62,9 @@ let onBeforeBuild = function () {
 clang_base_path="${NDK_ROOT}/toolchains/llvm/prebuilt/linux-x86_64"
              * 
              */
-            let newGnContent = gnContent + 
+            let newGnContent = gnContent +
 `use_glib=false
+android_ndk_root="${NDK_ROOT}"
 `;
             fs.writeFileSync(argsPath, newGnContent);
             trace("**********************************************")
