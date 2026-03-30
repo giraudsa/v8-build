@@ -182,10 +182,22 @@ jobs:
             ${OUTDIR}/args.gn \
             ${OUTDIR}/args.full.txt
           if [ "${{ matrix.platform }}" = "arm64" ]; then
-            # Include both V8 headers and chromium's libc++ headers
+            # V8 headers
             zip -r ../include-${{ env.JOB_NAME }}.zip include
-            zip -r ../include-${{ env.JOB_NAME }}.zip buildtools/third_party/libc++/trunk/include \
-              -x "*/test/*" -x "*/__assertion_handler" -x "*/__config_site.in"
+            # Chromium's libc++ headers (needed to compile embedder code with __Cr namespace)
+            # They live in third_party/libc++/src/include/ and generated headers in gen/
+            LIBCXX_INCLUDE=third_party/libc++/src/include
+            if [ -d "$LIBCXX_INCLUDE" ]; then
+              zip -r ../include-${{ env.JOB_NAME }}.zip "$LIBCXX_INCLUDE" \
+                -x "*/test/*" -x "*/__config_site.in" -x "*CMakeLists*"
+            fi
+            # Also include the generated __config_site
+            GEN_INCLUDE=${OUTDIR}/gen/third_party/libc++/src/include
+            if [ -d "$GEN_INCLUDE" ]; then
+              mkdir -p libcxx_gen
+              cp "$GEN_INCLUDE/__config_site" libcxx_gen/ 2>/dev/null || true
+              zip -r ../include-${{ env.JOB_NAME }}.zip libcxx_gen
+            fi
           fi
           ls -a
           echo "::endgroup::"
