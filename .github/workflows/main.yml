@@ -91,7 +91,7 @@ jobs:
         uses: nttld/setup-ndk@v1
         id: setup-ndk
         with:
-          ndk-version: r29
+          ndk-version: r28b
           add-to-path: false
           local-cache: true
 
@@ -159,19 +159,31 @@ jobs:
           echo "NDK_ROOT=${NDK_ROOT}"
           echo "::endgroup::"
           echo "::group::Compile v8 static library"
-          mkdir -p out.gn/android.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.android.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/android.${{ matrix.platform }}.release/args.gn
-          gn gen out.gn/android.${{ matrix.platform }}.release
-          ninja v8_monolith -C out.gn/android.${{ matrix.platform }}.release/
-          gn args --list out.gn/android.${{ matrix.platform }}.release > out.gn/android.${{ matrix.platform }}.release/args.full.txt
+          OUTDIR=out.gn/android.${{ matrix.platform }}.release
+          mkdir -p ${OUTDIR}/
+          cp ${{ github.workspace }}/args.android.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/${OUTDIR}/args.gn
+          gn gen ${OUTDIR}
+          ninja v8_monolith -C ${OUTDIR}/
+          gn args --list ${OUTDIR} > ${OUTDIR}/args.full.txt
+          echo "::endgroup::"
+          echo "::group::Package chromium libc++ (needed by embedders)"
+          # Collect chromium's libc++ and libc++abi .o files into a single archive
+          find ${OUTDIR}/obj/buildtools/third_party/libc++ -name '*.o' > /tmp/libcxx_objs.txt
+          find ${OUTDIR}/obj/buildtools/third_party/libc++abi -name '*.o' >> /tmp/libcxx_objs.txt
+          llvm-ar rcs ${OUTDIR}/obj/libc++_chromium.a $(cat /tmp/libcxx_objs.txt)
+          echo "Packaged $(wc -l < /tmp/libcxx_objs.txt) objects into libc++_chromium.a"
           echo "::endgroup::"
           echo "::group::Compress artifacts"
           zip -j ../libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip \
-            out.gn/android.${{ matrix.platform }}.release/obj/libv8_monolith.a \
-            out.gn/android.${{ matrix.platform }}.release/args.gn \
-            out.gn/android.${{ matrix.platform }}.release/args.full.txt
+            ${OUTDIR}/obj/libv8_monolith.a \
+            ${OUTDIR}/obj/libc++_chromium.a \
+            ${OUTDIR}/args.gn \
+            ${OUTDIR}/args.full.txt
           if [ "${{ matrix.platform }}" = "arm64" ]; then
+            # Include both V8 headers and chromium's libc++ headers
             zip -r ../include-${{ env.JOB_NAME }}.zip include
+            zip -r ../include-${{ env.JOB_NAME }}.zip buildtools/third_party/libc++/trunk/include \
+              -x "*/test/*" -x "*/__assertion_handler" -x "*/__config_site.in"
           fi
           ls -a
           echo "::endgroup::"
