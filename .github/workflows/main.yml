@@ -166,22 +166,18 @@ jobs:
           ninja v8_monolith -C ${OUTDIR}/
           gn args --list ${OUTDIR} > ${OUTDIR}/args.full.txt
           echo "::endgroup::"
-          echo "::group::Package chromium libc++ (needed by embedders)"
-          # Collect chromium's libc++ and libc++abi .o files into a single archive
-          # Objects may be in clang_x64_v8_<arch>/obj/... for cross-compilation
+          echo "::group::Build chromium libc++ for target (needed by embedders)"
+          # Build libc++ and libc++abi as separate targets
+          ninja -C ${OUTDIR}/ buildtools/third_party/libc++:libc++ buildtools/third_party/libc++abi:libc++abi
           AR=$(find ${{ github.workspace }}/v8/third_party/llvm-build -name 'llvm-ar' -type f | head -1)
           echo "Using ar: $AR"
-          echo "Searching for libc++ objects in ${OUTDIR}..."
-          find ${OUTDIR} -path "*/third_party/libc++/*.o" -o -path "*/third_party/libc++abi/*.o" > /tmp/libcxx_objs.txt
-          echo "Found $(wc -l < /tmp/libcxx_objs.txt) objects"
-          head -5 /tmp/libcxx_objs.txt
-          if [ -s /tmp/libcxx_objs.txt ]; then
-            $AR rcs ${OUTDIR}/obj/libc++_chromium.a $(cat /tmp/libcxx_objs.txt)
-            echo "Created libc++_chromium.a"
-          else
-            echo "WARNING: No libc++ objects found, creating empty archive"
-            $AR rcs ${OUTDIR}/obj/libc++_chromium.a
-          fi
+          # Target libc++ objects are in obj/buildtools/... (not clang_x64/...)
+          find ${OUTDIR}/obj/buildtools/third_party/libc++ -name '*.o' > /tmp/libcxx_objs.txt
+          find ${OUTDIR}/obj/buildtools/third_party/libc++abi -name '*.o' >> /tmp/libcxx_objs.txt
+          echo "Found $(wc -l < /tmp/libcxx_objs.txt) target objects"
+          head -3 /tmp/libcxx_objs.txt
+          $AR rcs ${OUTDIR}/obj/libc++_chromium.a $(cat /tmp/libcxx_objs.txt)
+          echo "Created libc++_chromium.a ($(du -h ${OUTDIR}/obj/libc++_chromium.a | cut -f1))"
           echo "::endgroup::"
           echo "::group::Compress artifacts"
           zip -j ../libv8_monolith-${{ env.JOB_NAME }}-${{ matrix.platform }}.zip \
